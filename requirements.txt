@@ -24,3 +24,5 @@ transformers
 openpyxl
 python-pptx
 passlib
+jwt
+python-jose
