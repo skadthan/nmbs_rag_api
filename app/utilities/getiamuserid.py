@@ -54,8 +54,8 @@ def get_iam_user_full_name():
 
 # Get the full name of the IAM user
 user_full_name = get_iam_user_full_name()
-print(user_full_name)
+#print(user_full_name)
 
 # Get UserId for sessionId
 user_id = get_iam_user_id()
-print(user_id)
+#print(user_id)

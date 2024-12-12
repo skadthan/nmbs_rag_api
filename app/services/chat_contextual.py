@@ -10,6 +10,7 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_aws import ChatBedrock
 import boto3
 from app.utilities import vector_store as vs
+from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
 
 boto3_bedrock = boto3.client("bedrock")
 model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
@@ -75,14 +76,14 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
 
 chain_with_history = RunnableWithMessageHistory(
     rag_chain,
-    get_session_history,
+    #get_session_history,
+    lambda session_id: DynamoDBChatMessageHistory(table_name='SessionTable', session_id=session_id),
     input_messages_key="input",
     history_messages_key="chat_history",
     output_messages_key="answer",
 )
 
-print(chain_with_history)
-
-def contexctual_chat_invoke():
-    result = chain_with_history.invoke({"input": "Hi, how are you today?"},config={"configurable": {"session_id": "session_1"}})
-    print("contextual output result", result)
+def contexctual_chat_invoke(request):
+    result = chain_with_history.invoke({"input": request.query},config={"configurable": {"session_id": request.session_id}})
+    #print("contextual output result", result)
+    return result

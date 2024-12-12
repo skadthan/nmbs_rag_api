@@ -16,19 +16,18 @@ vectorstore = vector_store.get_es_vector_store()  # Initialize your vectorstore 
 # Initialize the RAG chain
 rag_chain = get_rag_chain(vectorstore)
 chain_with_history = get_chain_with_history(rag_chain)
-print("chain_with_history 1",chain_with_history)
 
 async def process_rag(request: RAGRequest):
     """
     Processes a RAG request and returns the answer.
     """
-    print("before output")
+    #print("before output")
     try:
-        print("request.query: ",request.query )
-        print("request.session_id: ",request.session_id )
-        print("Invoking RAG chain...")
-        print("\ntype(chain_with_history): ",type(chain_with_history))
-        print("chain_with_history 2",chain_with_history)
+        #print("request.query: ",request.query )
+        #print("request.session_id: ",request.session_id )
+        #print("Invoking RAG chain...")
+        #print("\ntype(chain_with_history): ",type(chain_with_history))
+        #print("chain_with_history 2",chain_with_history)
         async def wait_for_response(future):
             while not future.done():
                 await asyncio.sleep(120)
@@ -43,13 +42,13 @@ async def process_rag(request: RAGRequest):
     
 
         #output = await chain_with_history.invoke({"input": request.query}, config={"configurable": {"session_id": request.session_id}})
-        print("RAG chain invocation completed. Output type:", type(output))
+        #print("RAG chain invocation completed. Output type:", type(output))
 
         # If output is a coroutine, await it again
         if inspect.iscoroutine(output):
             output =  output
 
-        print("after output", output)
+        #print("after output", output)
         return RAGResponse(answer=output["answer"])
     except Exception as e:
         print(f"Error during RAG chain invocation: {e}")

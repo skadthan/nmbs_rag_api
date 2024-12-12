@@ -14,15 +14,10 @@ router = APIRouter()
 
 async def contexctual_chatbot(request: RAGRequest):
     try:
-        test_response=cc.contexctual_chat_invoke()
-        print("test_response: ", test_response)
-        response = await process_rag(request)
-         # If output is a coroutine, await it again
-        if inspect.iscoroutine(response):
-            response =  await response
-
-        print("after inspect", response)
-        print("response:  :  :", response)
-        return {"humanRequest":request.query, "aiResponse": response.answer}
+        test_response=cc.contexctual_chat_invoke(request)
+        #print("test_response: ", test_response)
+        #response = await process_rag(request)
+        
+        return {"humanRequest":request.query, "aiResponse": test_response["answer"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
