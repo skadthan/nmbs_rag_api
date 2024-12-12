@@ -25,4 +25,7 @@ openpyxl
 python-pptx
 passlib
 jwt
+PyJWT
 python-jose
+python-multipart
+bcrypt
