@@ -2,7 +2,7 @@ import inspect
 from fastapi import APIRouter, HTTPException
 from app.services.chat_runnable_with_history_service import process_rag
 from pydantic import BaseModel
-from app.services import chat_contextual as cc
+from app.services import chat_contextual_service as cc
 
 from fastapi import APIRouter, HTTPException
 from app.services.rag_chain_service import get_rag_chain, get_chain_with_history
@@ -20,4 +20,6 @@ async def contexctual_chatbot(request: RAGRequest):
         
         return {"humanRequest":request.query, "aiResponse": test_response["answer"]}
     except Exception as e:
+        print("Exception: contextualbot",str(e))
         raise HTTPException(status_code=500, detail=str(e))
+        #return {"humanRequest":request.query, "aiResponse": str(e)}
