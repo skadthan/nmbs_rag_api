@@ -1,1 +1,9 @@
 .venv
+.venv/lib/python3.11/site-packages/jwt/__init__.py
+.venv/lib/python3.11/site-packages/jwt/__pycache__/__init__.cpython-311.pyc
+.venv/lib/python3.11/site-packages/jwt/__pycache__/exceptions.cpython-311.pyc
+.venv/lib/python3.11/site-packages/jwt/__pycache__/utils.cpython-311.pyc
+.venv/lib/python3.11/site-packages/jwt/exceptions.py
+.venv/lib/python3.11/site-packages/jwt/utils.py
+app/models/__pycache__/auth_models.cpython-311.pyc
+app/routers/__pycache__/auth.cpython-311.pyc
