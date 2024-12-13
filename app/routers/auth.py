@@ -1,14 +1,21 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timedelta
 import jwt
+from jwt import PyJWTError
+from typing import Optional
+from fastapi import Depends, HTTPException, Security
 from app.services.user_auth import verify_user
 from app.models.auth_models import LoginRequest, LoginResponse
 from passlib.context import CryptContext
+from fastapi.security import HTTPBearer
+
 
 
 # JWT Secret and algorithm
 SECRET_KEY = "nmbs-secret-key"
 ALGORITHM = "HS256"
+
+bearer_scheme = HTTPBearer()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -22,8 +29,6 @@ USER_CREDENTIALS = {
 
 
 router = APIRouter()
-
-import jwt
 
 def decode_access_token(token: str):
     """
@@ -66,6 +71,22 @@ def create_refresh_token(data: dict, expires_delta: timedelta = None):
     expire = datetime.utcnow() + (expires_delta or timedelta(days=7))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(bearer_scheme)) -> Optional[str]:
+    """
+    Validate the access token and return the username (subject).
+    """
+    try:
+        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return username
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 @router.post("/login", response_model=LoginResponse)
 def login(credentials: LoginRequest):

@@ -7,12 +7,14 @@ from app.services import chat_contextual_service as cc
 from fastapi import APIRouter, HTTPException
 from app.services.rag_chain_service import get_rag_chain, get_chain_with_history
 from app.models.rag_models import RAGRequest, RAGResponse
+from fastapi import APIRouter, HTTPException, Depends
+from app.routers.auth import get_current_user
 
 router = APIRouter()
 
 @router.post("/contextualbot", response_model=RAGResponse)
 
-async def contexctual_chatbot(request: RAGRequest):
+async def contexctual_chatbot(request: RAGRequest,current_user: str = Depends(get_current_user)):
     try:
         test_response=cc.contexctual_chat_invoke(request)
         #print("test_response: ", test_response)

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from app.services.embedding_service import process_file
 from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends
+from app.routers.auth import get_current_user
 
 class S3FileProcessRequest(BaseModel):
     bucketName: str
@@ -13,7 +15,7 @@ class ChatResponse(BaseModel):
 router = APIRouter()
 
 @router.post("/process")
-async def process_embeddings(request: S3FileProcessRequest):
+async def process_embeddings(request: S3FileProcessRequest,current_user: str = Depends(get_current_user)):
     try:
         print("Debug 1: request.bucketName: ",request.bucketName)
         process_file(request.bucketName, request.fileName)

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.utilities import getiamuserid
+from fastapi import APIRouter, HTTPException, Depends
+from app.routers.auth import get_current_user
 
 router = APIRouter()
 
@@ -9,7 +11,7 @@ class UserIAMInfoRequest(BaseModel):
     user_iam_id: str
 
 @router.get("/getiamuserid")
-async def get_iam_user_id():
+async def get_iam_user_id(current_user: str = Depends(get_current_user)):
     """
     Retrieve chat messages for the provided user session ID.
     """
@@ -21,7 +23,7 @@ async def get_iam_user_id():
 
 @router.get("/getiamusername")
 
-async def get_iam_user_full_name():
+async def get_iam_user_full_name(current_user: str = Depends(get_current_user)):
     """
     Retrieve chat messages for the provided user session ID.
     """

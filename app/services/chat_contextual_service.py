@@ -11,8 +11,19 @@ from langchain_aws import ChatBedrock
 import boto3
 from app.utilities import vector_store as vs
 from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
+from botocore.config import Config
 
-boto3_bedrock = boto3.client("bedrock")
+# Configure the Boto3 client with retries and backoff
+config = Config(
+    retries={
+        'max_attempts': 10,  # Number of retry attempts
+        'mode': 'adaptive'   # Adaptive backoff strategy
+    }
+)
+
+# Initialize the Bedrock client
+boto3_bedrock = boto3.client("bedrock", config=config)
+
 model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
 modelId = "anthropic.claude-3-sonnet-20240229-v1:0" #"anthropic.claude-v2"
 chatbedrock_llm = ChatBedrock(

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.services.chat_session_history_service import ChatSessionHistory
+from fastapi import APIRouter, HTTPException, Depends
+from app.routers.auth import get_current_user
 
 router = APIRouter()
 
@@ -13,7 +15,7 @@ class UserChatHistoryRequest(BaseModel):
 
 
 @router.post("/getchathistory")
-async def get_current_user_history(request: UserChatHistoryRequest):
+async def get_current_user_history(request: UserChatHistoryRequest,current_user: str = Depends(get_current_user)):
     """
     Retrieve chat messages for the provided user session ID.
     """

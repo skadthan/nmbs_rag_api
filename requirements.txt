@@ -29,3 +29,6 @@ PyJWT
 python-jose
 python-multipart
 bcrypt
+pylint
+dependency-check
+pipdeptree
