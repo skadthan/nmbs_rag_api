@@ -11,6 +11,7 @@ class ContextDocument(BaseModel):
 
 
 class RAGResponse(BaseModel):
+    status_code: int
     humanRequest: str
     aiResponse: str
     context: List[ContextDocument]  # List of context documents

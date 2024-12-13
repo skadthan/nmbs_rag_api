@@ -17,8 +17,11 @@ SSL_ASSERT_FINGERPRINT = os.getenv("SSL_ASSERT_FINGERPRINT","48:DA:5E:B4:A2:E7:5
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "ashu-data")
 S3_FILE_PREFIX = os.getenv("S3_FILE_PREFIX", "/nimbus/")
 
+# Data Directory
+S3_LOCAL_DATA_FOLDER= os.path.join(os.path.dirname(os.path.abspath(__name__)), "data")
+
 # Default Vector Store
-DEFAULT_INDEX_NAME = os.getenv("DEFAULT_INDEX_NAME", "nimbus-capabilities-vector-db") #cms-marketing-guidance-vector-db, ashu-elastic-search-vector-db
+DEFAULT_INDEX_NAME = os.getenv("DEFAULT_INDEX_NAME", "nmbs-capabilities-index") #cms-marketing-guidance-vector-db, ashu-elastic-search-vector-db, nimbus-capabilities-vector-db
 
 # Bedrock LLMs
 DEFAULT_MODEL_ID = os.getenv("DEFAULT_MODEL_ID", "amazon.titan-tg1-large")

@@ -9,6 +9,7 @@ from app.services.rag_chain_service import get_rag_chain, get_chain_with_history
 from app.models.rag_models import RAGRequest, RAGResponse
 from fastapi import APIRouter, HTTPException, Depends
 from app.routers.auth import get_current_user
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -31,6 +32,7 @@ async def contexctual_chatbot(request: RAGRequest,current_user: str = Depends(ge
 
         # Construct the full response
         response = {
+            "status_code": 200,
             "humanRequest": request.query,
             "aiResponse": ai_response["answer"],
             "context": context_documents  # Include metadata and content in the response
@@ -39,5 +41,13 @@ async def contexctual_chatbot(request: RAGRequest,current_user: str = Depends(ge
         return response
     except Exception as e:
         print("Exception: contextualbot",str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        #raise HTTPException(status_code=500, detail=str(e))
         #return {"humanRequest":request.query, "aiResponse": str(e)}
+        # General error message
+        error_message = {
+                "status_code": 500,
+                "message": str(e)
+            }
+        
+        # Return a JSON response with the custom error message
+        return JSONResponse(status_code=200, content=error_message)
