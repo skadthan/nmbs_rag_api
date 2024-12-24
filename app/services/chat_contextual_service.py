@@ -25,7 +25,10 @@ config = Config(
 boto3_bedrock = boto3.client("bedrock", config=config)
 
 model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
-modelId = "anthropic.claude-3-sonnet-20240229-v1:0" #"anthropic.claude-v2"
+modelId = "anthropic.claude-3-sonnet-20240229-v1:0" 
+#"anthropic.claude-v2"
+#anthropic.claude-3-sonnet-20240229-v1:0 (Previously Working)
+#anthropic.claude-3-5-sonnet-20240620-v1:0
 chatbedrock_llm = ChatBedrock(
     model_id=modelId,
     client=boto3_bedrock,
