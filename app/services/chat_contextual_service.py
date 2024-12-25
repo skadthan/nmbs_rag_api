@@ -14,18 +14,6 @@ import json, re
 from langchain.schema import AIMessage, HumanMessage
 
 
-
-class TruncatedChatMessageHistory(BaseChatMessageHistory):
-    max_token_limit = 1500  # Maximum token limit
-
-    def add_messages(self, messages):
-        super().add_messages(messages)
-        # Add logic here to truncate history to stay within max_token_limit
-
-def get_custom_session_history(session_id: str) -> BaseChatMessageHistory:
-    # Logic to retrieve or create a TruncatedChatMessageHistory instance
-    return TruncatedChatMessageHistory()
-
 class CustomDynamoDBChatMessageHistory(DynamoDBChatMessageHistory):
     def add_ai_message(self, content, response_metadata=None):
         """
@@ -110,7 +98,8 @@ store = {}
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     #print(session_id)
     if session_id not in store:
-        store[session_id] = InMemoryChatMessageHistory()
+        store[session_id] = DynamoDBChatMessageHistory(table_name='SessionTable', session_id=session_id)
+        #print("store[session_id]: ",store[session_id])
     return store[session_id]
 
 
@@ -137,8 +126,18 @@ def contexctual_chat_invoke(request):
     )
     dynamo_history.add_message(user_message)  # Add user message
 
-    input_token_count =  input_token_count = count_anthropic_tokens(user_message.content)
-    print(f"Input Tokens: {input_token_count}")
+    input_token_count  = count_anthropic_tokens(user_message.content)
+
+    print(f"Input Tokens without Histroy: {input_token_count}")
+
+    chat_history = get_session_history(session_id=request.session_id)
+    #print("chat_history: ", chat_history)
+
+    combined_text = print_chat_history(chat_history)
+
+    input_token_count = count_anthropic_tokens(combined_text)
+
+    print(f"Input Tokens of History: {input_token_count}")
 
     result = chain_with_history.invoke({"input": request.query},config={"configurable": {"session_id": request.session_id}})
    
@@ -157,8 +156,6 @@ def contexctual_chat_invoke(request):
         content=information_sources["content"],
         response_metadata={"sources": information_sources["metadata"]}
     )
-    
-    print("Chat response saved with metadata.")
     
     print("before Returning the chat response")
     
@@ -220,3 +217,24 @@ def count_anthropic_tokens(text: str) -> int:
     
     return total_tokens
 
+def print_chat_history(chat_history):
+    """
+    Prints and processes the chat history content for human and AI messages.
+    """
+    if isinstance(chat_history, DynamoDBChatMessageHistory):
+        messages = chat_history.messages
+    else:
+        raise ValueError("chat_history must be an instance of DynamoDBChatMessageHistory")
+
+    combined_text = ""
+    for message in messages:
+        if hasattr(message, "type"):
+            role = message.type.capitalize()
+        else:
+            role = "Unknown"
+
+        content = getattr(message, "content", "No content")
+        print(f"{role}: {content}")
+        combined_text += f"{content}\n"
+
+    return combined_text
