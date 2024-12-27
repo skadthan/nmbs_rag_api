@@ -7,7 +7,7 @@ from app.routers.auth import get_current_user
 router = APIRouter()
 
 # Initialize ChatSessionHistory
-chat_session = ChatSessionHistory(table_name="SessionTable")
+chat_session = ChatSessionHistory(table_name="UserChatSessionHistoryTable")
 
 
 class UserChatHistoryRequest(BaseModel):

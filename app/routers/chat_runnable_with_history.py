@@ -1,4 +1,4 @@
-import inspect
+import inspect, uuid
 from fastapi import APIRouter, HTTPException
 from app.services.chat_runnable_with_history_service import process_rag
 from pydantic import BaseModel
@@ -19,25 +19,45 @@ async def contexctual_chatbot(request: RAGRequest,current_user: str = Depends(ge
     try:
         ai_response=cc.contexctual_chat_invoke(request)
         # Extract relevant contextual information
-        context_documents = []
-        for doc in ai_response.get("context", []):  # Assuming "context" contains a list of documents
-            metadata = doc.metadata if hasattr(doc, "metadata") else {}
-            page_content = doc.page_content if hasattr(doc, "page_content") else ""
-            
-            # Construct document details
-            context_documents.append({
-                "metadata": metadata,
-                "page_content": page_content
-            })
+        # Initialize session ID
+        session_id = request.session_id
+        # Prepare user message
+        user_message = {
+            "Role": "user",
+            "Content": request.query,
+            "MessageId": str(uuid.uuid4()),
+            "ResponseMetadata": {}
+        }
 
-        # Construct the full response
+        # Format the AI message
+        context_documents = []
+        if "context" in ai_response:  # Assuming "context" contains document objects
+            for doc in ai_response["context"]:
+                metadata = getattr(doc, "metadata", {})
+                page_content = getattr(doc, "page_content", "")
+
+                # Append document details
+                context_documents.append({
+                    "page_content": page_content,
+                    "source": metadata.get("source", "unknown")
+                })
+
+        ai_message = {
+            "Role": "ai",
+            "Content": ai_response["answer"],
+            "MessageId": str(uuid.uuid4()),
+            "ResponseMetadata": {
+                "sources": context_documents
+            }
+        }
+
+        # Construct the final response
         response = {
             "status_code": 200,
-            "humanRequest": request.query,
-            "aiResponse": ai_response["answer"],
-            "context": context_documents  # Include metadata and content in the response
+            "session_id": session_id,
+            "messages": [user_message, ai_message]
         }
-        
+
         return response
     except Exception as e:
         print("Exception: contextualbot",str(e))

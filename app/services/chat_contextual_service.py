@@ -12,18 +12,63 @@ from langchain_community.chat_message_histories import DynamoDBChatMessageHistor
 from botocore.config import Config
 import json, re
 from langchain.schema import AIMessage, HumanMessage
+from boto3.dynamodb.conditions import Key
+import uuid
 
 
-class CustomDynamoDBChatMessageHistory(DynamoDBChatMessageHistory):
-    def add_ai_message(self, content, response_metadata=None):
+class Message:
+    def __init__(self, id, content, role, additional_kwargs=None, response_metadata=None):
+        self.id = id
+        self.content = content
+        self.role = role  # 'user' or 'ai'
+        self.additional_kwargs = additional_kwargs or {}
+        self.response_metadata = response_metadata or {}
+
+
+
+class CustomDynamoDBChatMessageHistory:
+    def __init__(self, table_name, session_id):
+        self.table_name = table_name
+        self.session_id = session_id
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(self.table_name)
+        self.messages = self.fetch_messages()
+
+    def fetch_messages(self):
         """
-        Add an AI message with response metadata.
+        Fetch all messages for the current session from DynamoDB.
         """
-        ai_message = AIMessage(
-            content=content,
-            response_metadata=response_metadata or {}
+        response = self.table.get_item(Key={'SessionId': self.session_id})
+        history = response.get('Item', {}).get('History', [])
+
+        # Check if history exists and starts with a user message
+        if not history or history[0].get('Role') != 'user':
+            print("Session does not start with a user message.")
+            return []
+    
+        return history
+
+
+    def add_message(self, message):
+        """
+        Append a message to the chat history for the session in DynamoDB.
+        """
+        print("add message", message)
+        self.table.update_item(
+            Key={'SessionId': self.session_id},
+            UpdateExpression="SET History = list_append(if_not_exists(History, :empty_list), :new_message)",
+            ExpressionAttributeValues={
+                ':empty_list': [],  # Initialize Messages attribute if it doesn't exist
+                ':new_message': [{
+                    'MessageId': str(uuid.uuid4()),  # Unique ID for the message
+                    'Content': message.content,     # Message content
+                    'Role': message.role,           # 'user' or 'ai'
+                    'ResponseMetadata': message.response_metadata
+                }]
+            },
+            ReturnValues="UPDATED_NEW"
         )
-        self.add_message(ai_message)  # Save the message to DynamoDB
+
 
 
 # Configure the Boto3 client with retries and backoff
@@ -98,7 +143,7 @@ store = {}
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     #print(session_id)
     if session_id not in store:
-        store[session_id] = DynamoDBChatMessageHistory(table_name='SessionTable', session_id=session_id)
+        store[session_id] = DynamoDBChatMessageHistory(table_name='UserChatSessionHistoryTable', session_id=session_id)
         #print("store[session_id]: ",store[session_id])
     return store[session_id]
 
@@ -117,47 +162,75 @@ chain_with_history = RunnableWithMessageHistory(
 
 def contexctual_chat_invoke(request):
 
-    dynamo_history = CustomDynamoDBChatMessageHistory(table_name="SessionTable", session_id=request.session_id)
+    dynamo_history = CustomDynamoDBChatMessageHistory(table_name="UserChatSessionHistoryTable", session_id=request.session_id)
 
     # Add the user query to the history manually
+    user_message_id = str(uuid.uuid4())
     user_message = HumanMessage(
+        id=user_message_id,
         content=request.query,
+        role="user",
         additional_kwargs={"query_metadata": {"session_id": request.session_id}}
     )
     dynamo_history.add_message(user_message)  # Add user message
-
+   
+    # Fetch chat history for the session
+    full_history = dynamo_history.fetch_messages()
+    #print("dynamo_history.full_history: ",full_history)
+    # Format the history into the input expected by `rag_chain`
+    formatted_history = format_chat_history_for_chain(full_history)
+    #print("dynamo_history.formatted_history: ",formatted_history)
+    
     input_token_count  = count_anthropic_tokens(user_message.content)
 
     print(f"Input Tokens without Histroy: {input_token_count}")
 
-    chat_history = get_session_history(session_id=request.session_id)
+    #chat_history = get_session_history(session_id=request.session_id)
     #print("chat_history: ", chat_history)
 
-    combined_text = print_chat_history(chat_history)
+    combined_text = print_chat_history(full_history)
 
     input_token_count = count_anthropic_tokens(combined_text)
 
     print(f"Input Tokens of History: {input_token_count}")
 
-    result = chain_with_history.invoke({"input": request.query},config={"configurable": {"session_id": request.session_id}})
-   
-     # Token counting for output
+    #result = chain_with_history.invoke({"input": request.query},config={"configurable": {"session_id": request.session_id}})
+    #Combine the formatted history with the user query
+    chain_input = {
+        "input": request.query,
+        "chat_history": formatted_history
+    }
+    #print("chain_input: ",chain_input)
+    # Invoke the RAG chain with the constructed input
+    result = rag_chain.invoke(chain_input)
+    #print("AI result", result)
+    
+    # Token counting for output
     output_token_count = count_anthropic_tokens(result["answer"])
     print(f"Output Tokens: {output_token_count}")
-
+    
+    ai_message_id = str(uuid.uuid4())
+    information_sources = format_ai_response_with_metadata(result)
+    ai_message = Message(
+        id=ai_message_id,
+        content=information_sources["content"],
+        role="ai",
+        response_metadata={"sources": information_sources["metadata"], "token_counts": {"input": input_token_count, "output": output_token_count}}
+    )
+   
+   
     #print("contextual output result", result)
     
-    information_sources=format_ai_response_with_metadata(result)
+    #information_sources=format_ai_response_with_metadata(result)
     
     #print("Information Sources: ", information_sources)
 
     # Add the AI response to the history with metadata
-    dynamo_history.add_ai_message(
-        content=information_sources["content"],
-        response_metadata={"sources": information_sources["metadata"]}
-    )
+    #dynamo_history.add_ai_message(content=information_sources["content"],response_metadata={"sources": information_sources["metadata"]})
+    #dynamo_history.add_ai_message(ai_message, response_metadata={"sources": information_sources["metadata"]})
+    dynamo_history.add_message(ai_message)
     
-    print("before Returning the chat response")
+    #print("before Returning the chat response")
     
     return result
 
@@ -221,20 +294,30 @@ def print_chat_history(chat_history):
     """
     Prints and processes the chat history content for human and AI messages.
     """
-    if isinstance(chat_history, DynamoDBChatMessageHistory):
-        messages = chat_history.messages
-    else:
-        raise ValueError("chat_history must be an instance of DynamoDBChatMessageHistory")
+    if not isinstance(chat_history, list):
+        raise ValueError("chat_history must be a list of message dictionaries")
 
     combined_text = ""
-    for message in messages:
-        if hasattr(message, "type"):
-            role = message.type.capitalize()
-        else:
-            role = "Unknown"
-
-        content = getattr(message, "content", "No content")
-        print(f"{role}: {content}")
+    for message in chat_history:
+        role = message.get('Role', 'Unknown').capitalize()
+        content = message.get('Content', 'No content')
+        #print(f"{role}: {content}")
         combined_text += f"{content}\n"
 
     return combined_text
+
+def format_chat_history_for_chain(messages):
+    """
+    Converts chat messages into a format suitable for `rag_chain`.
+    """
+    formatted_history = []
+    for message in messages:
+        if message['Role'] == 'user':
+            formatted_history.append({"role": "user", "content": message['Content']})
+        elif message['Role'] == 'ai':
+            formatted_history.append({"role": "assistant", "content": message['Content']})
+    return formatted_history
+
+
+def generate_message_id():
+    return str(uuid.uuid4())
