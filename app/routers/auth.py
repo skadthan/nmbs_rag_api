@@ -41,7 +41,7 @@ def decode_access_token(token: str):
         return None
 
 
-def verify_user(username: str, password: str) -> bool:
+def verify_user_bkp(username: str, password: str) -> bool:
     """
     Verifies if the provided username and password are correct.
     """

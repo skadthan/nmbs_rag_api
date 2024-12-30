@@ -36,6 +36,6 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "app.log")
 
 USER_CREDENTIALS = {
-    "admin": os.getenv("ADMIN_PASSWORD", "password123"),
-    "skadthan": os.getenv("USER_PASSWORD", "userpassword"),
+    "admin": os.getenv("ADMIN_PASSWORD", "Ananya#2021"),
+    "skadthan": os.getenv("USER_PASSWORD", "Ashu#123"),
 }
