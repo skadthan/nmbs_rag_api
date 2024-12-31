@@ -11,9 +11,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-app.include_router(user_role_manager.router, prefix="/user", tags=["User Registration"])
-app.include_router(auth.router,prefix="/auth", tags=["User Authentication"])
-app.include_router(chat.router, prefix="/chat", tags=["Chat Bot"])
+app.include_router(user_role_manager.router, prefix="/user", tags=["User Management"])
+app.include_router(auth.router,prefix="/auth", tags=["User Management"])
+app.include_router(chat.router, prefix="/chat", tags=["Contextual Chat Bot"])
 app.include_router(chat_runnable_with_history.router,prefix="/chat", tags=["Contextual Chat Bot"])
 app.include_router(embeddings.router, prefix="/embeddings", tags=["Embeddings"])
 app.include_router(batch_embeddings.router,prefix="/batchembeddings", tags=["Embeddings"])

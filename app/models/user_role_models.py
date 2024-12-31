@@ -13,3 +13,9 @@ class UserRegistration(BaseModel):
 class RoleApproval(BaseModel):
     request_id: str
     status: str  # "approved" or "rejected"
+
+class User(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    date_of_birth: str

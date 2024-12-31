@@ -5,7 +5,7 @@ import boto3
 from uuid import uuid4
 from passlib.context import CryptContext
 from typing import List
-from app.models.user_role_models import UserRegistration, RoleApproval
+from app.models.user_role_models import UserRegistration, RoleApproval, User
 
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
@@ -116,3 +116,88 @@ def approve_roles(approval: RoleApproval):
         
         # Return a JSON response with the custom error message
         return JSONResponse(status_code=200, message=error_message)
+
+def get_user_profile(user_id: str):
+    try:
+        # Check if user already exists
+        user_response = users_table.get_item(Key={"UserId": user_id})
+        if "Item" not in user_response:
+            raise HTTPException(status_code=404, detail="User does not exist")
+        
+        user = user_response["Item"]
+
+        # Build a structured response
+        user_profile = {
+            "user_id": user.get("UserId"),
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
+            "email": user.get("email"),
+            "date_of_birth": user.get("date_of_birth"),
+        }
+
+        print("User Profile Retrieved: ", user_profile)
+        return user_profile
+
+    except HTTPException as http_exc:
+        # Explicitly re-raise HTTP exceptions
+        print("HTTP Exception: ", str(http_exc))
+        raise http_exc
+    except Exception as e:
+        # Handle unexpected exceptions
+        print("Exception: Error fetching user profile - ", str(e))
+        error_message = {
+            "status_code": 500,
+            "error_message": f"An internal error occurred: {str(e)}"
+        }
+        return JSONResponse(status_code=500, content=error_message)
+
+
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+
+def get_user_roles(user_id: str):
+    try:
+        # Fetch user information from Users table
+        user_response = users_table.get_item(Key={"UserId": user_id})
+        if "Item" not in user_response:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user = user_response["Item"]
+        role_ids = user.get("roles", [])  # Retrieve role IDs (list) from the user record
+
+        if not role_ids:
+            raise HTTPException(status_code=404, detail="No roles associated with this user")
+
+        # Fetch role details for each RoleId
+        roles = []
+        for role_id in role_ids:
+            role_response = roles_table.get_item(Key={"RoleId": role_id})
+            if "Item" in role_response:
+                role_item = role_response["Item"]
+                roles.append({
+                    "application": role_item.get("application"),
+                    "role_name": role_item.get("role_name"),
+                    "admin_access": role_item.get("admin_access")
+                })
+
+        # Return the roles with application and role names
+        user_roles = {
+            "user_id": user_id,
+            "roles": roles
+        }
+
+        print("User Roles Retrieved: ", user_roles)
+        return user_roles
+
+    except HTTPException as http_exc:
+        # Explicitly re-raise HTTP exceptions
+        print("HTTP Exception: ", str(http_exc))
+        raise http_exc
+    except Exception as e:
+        # Handle unexpected exceptions
+        print("Exception: Error fetching user roles - ", str(e))
+        error_message = {
+            "status_code": 500,
+            "error_message": f"An internal error occurred: {str(e)}"
+        }
+        return JSONResponse(status_code=500, content=error_message)
