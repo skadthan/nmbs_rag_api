@@ -70,7 +70,6 @@ class CustomDynamoDBChatMessageHistory:
         )
 
 
-
 # Configure the Boto3 client with retries and backoff
 config = Config(
     retries={
@@ -321,3 +320,16 @@ def format_chat_history_for_chain(messages):
 
 def generate_message_id():
     return str(uuid.uuid4())
+
+def get_application_config(application_id):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('AIApplicationConfig')
+
+    response = table.scan(
+        FilterExpression=Key('ApplicationName').eq(application_id)
+    )
+
+    if 'Items' not in response or not response['Items']:
+        raise ValueError(f"No configuration found for application: {application_id}")
+
+    return response['Items'][0]

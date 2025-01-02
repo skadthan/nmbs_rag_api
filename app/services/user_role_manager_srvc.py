@@ -175,6 +175,7 @@ def get_user_roles(user_id: str):
             if "Item" in role_response:
                 role_item = role_response["Item"]
                 roles.append({
+                    "application_id": role_item.get("ApplicationId"),
                     "application": role_item.get("application"),
                     "role_name": role_item.get("role_name"),
                     "admin_access": role_item.get("admin_access")
