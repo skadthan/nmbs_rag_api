@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import chat, embeddings, chat_session_history,iam_info,chat_runnable_with_history, auth, batch_embeddings,create_user_chat_session,get_user_chat_sessions, user_role_manager
+from app.routers import chat, embeddings, chat_session_history,iam_info,chat_runnable_with_history, auth, batch_embeddings,create_user_chat_session,get_user_chat_sessions, user_role_manager,get_ai_application_config
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(root_path="/nmbs/api")
@@ -20,6 +20,7 @@ app.include_router(batch_embeddings.router,prefix="/batchembeddings", tags=["Emb
 app.include_router(chat_session_history.router,prefix="/session",tags=["User Chat Session"])
 app.include_router(create_user_chat_session.router,prefix="/session",tags=["User Chat Session"])
 app.include_router(get_user_chat_sessions.router,prefix="/session",tags=["User Chat Session"])
+app.include_router(get_ai_application_config.router,prefix="/config",tags=["AI Application Configuration"])
 app.include_router(iam_info.router, prefix="/iam",tags=["Get IAM Info"])
 
 
