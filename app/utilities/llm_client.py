@@ -3,7 +3,8 @@ sys.path.append('/Users/skadthan/Desktop/Nimbus AI Project/code/rag-api/venv/lib
 from . import bedrockclient
 from langchain_aws import BedrockLLM
 from langchain_aws import BedrockEmbeddings
-import os
+import os, boto3
+from boto3.dynamodb.conditions import Key
 #from langchain_community.llms import Bedrock
 
 #Create bedrock client instance function.
@@ -36,3 +37,16 @@ def get_bedrock_anthropic_claude_llm():
     #llm = Bedrock(model_id="anthropic.claude-v2", client=boto3_bedrock, model_kwargs={"max_tokens_to_sample": 200,"temperature": 0.2,"top_p": 0.9})
     llm = BedrockLLM(model_id="anthropic.claude-v2", client=boto3_bedrock, model_kwargs={"max_tokens_to_sample": 2048,"temperature": 0.2,"top_p": 0.9})
     return llm
+
+def get_application_config(application_id):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('AIApplicationConfig')
+
+    response = table.scan(
+        FilterExpression=Key('ApplicationId').eq(application_id)
+    )
+
+    if 'Items' not in response or not response['Items']:
+        raise ValueError(f"No configuration found for application: {application_id}")
+
+    return response['Items'][0]

@@ -8,11 +8,11 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_aws import ChatBedrock
 import boto3
 from app.utilities import vector_store as vs
+from app.utilities.llm_client import get_application_config
 from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
 from botocore.config import Config
 import json, re
 from langchain.schema import AIMessage, HumanMessage
-from boto3.dynamodb.conditions import Key
 import uuid
 
 
@@ -81,21 +81,30 @@ config = Config(
 # Initialize the Bedrock client
 boto3_bedrock = boto3.client("bedrock", config=config)
 
-model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
-modelId = "anthropic.claude-3-sonnet-20240229-v1:0" 
+#model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
+#modelId = "anthropic.claude-3-sonnet-20240229-v1:0" 
 #"anthropic.claude-v2"
 #anthropic.claude-3-sonnet-20240229-v1:0 (Previously Working)
 #anthropic.claude-3-5-sonnet-20240620-v1:0
+# Fetch configuration for the application
+app_config = get_application_config("1735666503001")
+
+# Assign values dynamically
+modelId = app_config["ModelId"]
+model_name = app_config["ModelName"]
+model_parameters = app_config["ModelParams"]
+
 chatbedrock_llm = ChatBedrock(
     model_id=modelId,
     client=boto3_bedrock,
-    model_kwargs=model_parameter, 
+    model_kwargs=model_parameters, 
     beta_use_converse_api=True
 )
 
 # Initialize the RAG chain
 vector_store = vs.get_es_vector_store()
 
+'''
 contextualized_question_system_template = (
     "You are assisting in generating a comprehensive capabilities statement based on user queries and contextual information."
     "Given the chat history and the latest user query, rewrite the query to be a self-contained question,"
@@ -103,6 +112,8 @@ contextualized_question_system_template = (
     "and aligns with the goal of constructing a detailed capabilities statement."
     "Do NOT answer the question—only reformulate it. If no reformulation is needed, return the query as is."
 )
+'''
+contextualized_question_system_template = app_config["SystemPrompt"]
 
 contextualized_question_prompt = ChatPromptTemplate.from_messages(
     [
@@ -115,7 +126,7 @@ history_aware_retriever = create_history_aware_retriever(
     chatbedrock_llm, vector_store.as_retriever(), contextualized_question_prompt
 )
 
-
+'''
 qa_system_prompt = """You are an AI assistant tasked with providing detailed and relevant responses for generating a capabilities statement. \
 Using the retrieved documents and context, answer the user query as accurately and professionally as possible. \
 If the retrieved context does not contain sufficient information to answer the query, state: \
@@ -127,12 +138,16 @@ Guidelines:\
 3. Reference retrieved context explicitly when possible, such as contracts, proposals, or assessments.\
 
 {context}"""
+'''
+qa_system_prompt = app_config["QAPrompt"]
 
 qa_prompt = ChatPromptTemplate.from_messages([
     ("system", qa_system_prompt),
     MessagesPlaceholder("chat_history"),
     ("human", "{input}")
 ])
+
+
 question_answer_chain = create_stuff_documents_chain(chatbedrock_llm, qa_prompt)
 
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
@@ -320,16 +335,3 @@ def format_chat_history_for_chain(messages):
 
 def generate_message_id():
     return str(uuid.uuid4())
-
-def get_application_config(application_id):
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('AIApplicationConfig')
-
-    response = table.scan(
-        FilterExpression=Key('ApplicationName').eq(application_id)
-    )
-
-    if 'Items' not in response or not response['Items']:
-        raise ValueError(f"No configuration found for application: {application_id}")
-
-    return response['Items'][0]
