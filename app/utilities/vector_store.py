@@ -1,6 +1,5 @@
 from app.utilities.llm_client import get_bedrock_embedding_model
 from app.utilities import esclient
-from langchain.llms import Bedrock
 from app.config import DEFAULT_INDEX_NAME
 from langchain_elasticsearch import ElasticsearchStore
 
