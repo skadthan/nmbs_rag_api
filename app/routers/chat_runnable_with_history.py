@@ -70,4 +70,4 @@ async def contexctual_chatbot(request: RAGRequest,current_user: str = Depends(ge
             }
         
         # Return a JSON response with the custom error message
-        return JSONResponse(status_code=200, message=error_message)
+        return JSONResponse(status_code=200, content={"message": error_message})

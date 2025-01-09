@@ -1,9 +1,9 @@
 import boto3
-
+from botocore.config import Config
 
 # Initialize the IAM client
 iam_client = boto3.client('iam')
-client = boto3.client('sts')
+client = boto3.client('sts',config=Config(region_name='us-east-1'))
 
 
 def get_iam_user_id():

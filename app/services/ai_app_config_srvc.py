@@ -6,9 +6,14 @@ from uuid import uuid4
 from passlib.context import CryptContext
 from typing import List
 from app.models.user_role_models import UserRegistration, RoleApproval, User
+import logging
+from botocore.config import Config
 
-# Initialize DynamoDB client
-dynamodb = boto3.resource('dynamodb')
+# Enable debug logging
+#logging.basicConfig(level=logging.DEBUG)
+#boto3.set_stream_logger('', logging.DEBUG)
+
+dynamodb = boto3.resource('dynamodb', config=Config(region_name='us-east-1'))
 ai_app_config_table = dynamodb.Table('AIApplicationConfig')
 
 

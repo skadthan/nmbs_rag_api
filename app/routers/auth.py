@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timedelta
 import jwt
-from jwt import PyJWTError
 from typing import Optional
 from fastapi import Depends, HTTPException, Security
 from app.services.user_auth import verify_user

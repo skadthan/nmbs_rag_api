@@ -3,10 +3,18 @@ from app import config
 import boto3
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
+import logging
+from botocore.config import Config
+
+# Enable debug logging
+#logging.basicConfig(level=logging.DEBUG)
+#boto3.set_stream_logger('', logging.DEBUG)
 
 
 # Initialize DynamoDB client
-dynamodb = boto3.resource('dynamodb')
+#dynamodb = boto3.resource('dynamodb')
+# Explicitly set region (if needed)
+dynamodb = boto3.resource('dynamodb', config=Config(region_name='us-east-1'))
 users_table = dynamodb.Table('Users')
 
 # Use Passlib to hash and verify passwords

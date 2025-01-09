@@ -7,8 +7,10 @@ load_dotenv()  # This will load environment variables from a `.env` file
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 BEDROCK_ENDPOINT = os.getenv("BEDROCK_ENDPOINT", "https://bedrock-runtime.us-east-1.amazonaws.com")
 
-# Elasticsearch Configuration
-ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "https://localhost:9200")
+# Elasticsearch Local Configuration
+#ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "https://localhost:9200")
+# Elasticsearch Docker Configuration
+ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "https://host.docker.internal:9200")
 ELASTICSEARCH_USERNAME = os.getenv("ELASTICSEARCH_USERNAME", "elastic")
 ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "Ashu#123")
 SSL_ASSERT_FINGERPRINT = os.getenv("SSL_ASSERT_FINGERPRINT","48:DA:5E:B4:A2:E7:59:29:DF:FC:5A:9A:B6:72:50:E4:D1:58:1F:0B:6E:2B:EE:1B:CE:23:A2:79:B9:46:DD:5D")

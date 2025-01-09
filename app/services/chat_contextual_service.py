@@ -14,6 +14,7 @@ from botocore.config import Config
 import json, re
 from langchain.schema import AIMessage, HumanMessage
 import uuid
+from botocore.config import Config
 
 
 class Message:
@@ -30,7 +31,7 @@ class CustomDynamoDBChatMessageHistory:
     def __init__(self, table_name, session_id):
         self.table_name = table_name
         self.session_id = session_id
-        self.dynamodb = boto3.resource('dynamodb')
+        self.dynamodb = boto3.resource('dynamodb', config=Config(region_name='us-east-1'))
         self.table = self.dynamodb.Table(self.table_name)
         self.messages = self.fetch_messages()
 
@@ -75,11 +76,21 @@ config = Config(
     retries={
         'max_attempts': 10,  # Number of retry attempts
         'mode': 'adaptive'   # Adaptive backoff strategy
-    }
+    },
+    region_name='us-east-1'
 )
 
 # Initialize the Bedrock client
-boto3_bedrock = boto3.client("bedrock", config=config)
+boto3_bedrock = boto3.client(
+    "bedrock",
+    region_name="us-east-1",  # Replace with your Bedrock-supported region
+    config=Config(
+        retries={
+            'max_attempts': 10,
+            'mode': 'adaptive'
+        }
+    ))
+print("Bedrock Client Initialized Successfully")
 
 #model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
 #modelId = "anthropic.claude-3-sonnet-20240229-v1:0" 

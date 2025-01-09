@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
 import boto3
+from botocore.config import Config
 
-dynamodb = boto3.resource("dynamodb")
+dynamodb = boto3.resource("dynamodb",config=Config(region_name='us-east-1'))
 user_session_table_name = "UserSessionTable"
 user_session_table_name = dynamodb.Table(user_session_table_name)
 

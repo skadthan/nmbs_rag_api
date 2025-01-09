@@ -31,7 +31,8 @@ config = Config(
     retries={
         'max_attempts': 10,  # Number of retry attempts
         'mode': 'adaptive'   # Adaptive backoff strategy
-    }
+    },
+    region_name='us-east-1'
 )
 
 # Initialize the Bedrock client

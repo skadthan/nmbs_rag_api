@@ -24,7 +24,7 @@ transformers
 openpyxl
 python-pptx
 passlib
-jwt
+#jwt
 PyJWT
 python-jose
 python-multipart
@@ -32,4 +32,4 @@ bcrypt
 pylint
 dependency-check
 pipdeptree
-'pydantic[email]'
+pydantic[email]

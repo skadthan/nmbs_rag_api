@@ -5,6 +5,7 @@ from langchain_aws import BedrockLLM
 from langchain_aws import BedrockEmbeddings
 import os, boto3
 from boto3.dynamodb.conditions import Key
+from botocore.config import Config
 #from langchain_community.llms import Bedrock
 
 #Create bedrock client instance function.
@@ -13,7 +14,8 @@ def get_bedrock_client():
 
     boto3_bedrock = bedrockclient.get_bedrock_client(
         #assumed_role=os.environ.get("BEDROCK_ASSUME_ROLE", None),
-        region=os.environ.get("AWS_DEFAULT_REGION", None)
+        #region=os.environ.get("AWS_DEFAULT_REGION", None)
+        region='us-east-1'
     )
     return boto3_bedrock
 
@@ -39,7 +41,7 @@ def get_bedrock_anthropic_claude_llm():
     return llm
 
 def get_application_config(application_id):
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource('dynamodb',config=Config(region_name='us-east-1'))
     table = dynamodb.Table('AIApplicationConfig')
 
     response = table.scan(
