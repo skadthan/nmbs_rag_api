@@ -33,3 +33,4 @@ pylint
 dependency-check
 pipdeptree
 pydantic[email]
+opensearch-py

@@ -15,6 +15,14 @@ ELASTICSEARCH_USERNAME = os.getenv("ELASTICSEARCH_USERNAME", "elastic")
 ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "Ashu#123")
 SSL_ASSERT_FINGERPRINT = os.getenv("SSL_ASSERT_FINGERPRINT","48:DA:5E:B4:A2:E7:59:29:DF:FC:5A:9A:B6:72:50:E4:D1:58:1F:0B:6E:2B:EE:1B:CE:23:A2:79:B9:46:DD:5D")
 
+
+# Amazon OpenSearch Serverless Configuration
+AOSS_ENDPOINT = os.getenv("AOSS_ENDPOINT", "https://d5pfykmqchz1gw7wzshe.us-east-1.aoss.amazonaws.com")
+AOSS_VECTORSTORE_NAME = os.getenv("AOSS_VECTORSTORE_NAME", "ashu-open-search-vector-db")
+AOSS_VECTORSTORE_INDEX = os.getenv("AOSS_VECTORSTORE_INDEX", "ashu-open-search-vector-db-index")
+
+
+
 # S3 Configuration
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "ashu-data")
 S3_FILE_PREFIX = os.getenv("S3_FILE_PREFIX", "/nimbus/")

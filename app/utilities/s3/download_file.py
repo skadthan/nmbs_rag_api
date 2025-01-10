@@ -8,7 +8,8 @@ from botocore.config import Config
 
 # Initialize awsauth, open search parameters, boto clients and llm model 
 #s3 = session.client('s3')
-s3 = boto3.resource('s3', config=Config(region_name='us-east-1'))
+#s3 = boto3.resource('s3', config=Config(region_name='us-east-1'))
+s3 =boto3.client('s3',config=Config(region_name='us-east-1')) 
 
 def download_file(bucket_name,  file_name):
     #print('Debug:4, bucket_name & : file_name ', file_name)
