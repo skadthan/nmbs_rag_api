@@ -11,7 +11,8 @@ from app.models.rag_models import RAGRequest, RAGResponse
 
 
 # Mock Vectorstore (replace with actual implementation)
-vectorstore = vector_store.get_es_vector_store()  # Initialize your vectorstore here
+#vectorstore = vector_store.get_es_vector_store()  # Initialize your vectorstore here
+vectorstore = vector_store.get_aoss_vector_store() 
 
 # Initialize the RAG chain
 rag_chain = get_rag_chain(vectorstore)

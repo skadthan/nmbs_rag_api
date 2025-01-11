@@ -1,6 +1,8 @@
 import boto3
+from botocore.config import Config
+from app import config
 dynamodb = boto3.resource("dynamodb")
-client = boto3.client('sts')
+client = boto3.client('sts', config=Config(region_name=config.AWS_REGION))
 
 try:
     # Create the DynamoDB table.

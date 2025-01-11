@@ -1,8 +1,9 @@
 import boto3
 from botocore.config import Config
 from app.utilities.session_utils import insert_user_session
+from app import config
 
-dynamodb = boto3.resource("dynamodb", config=Config(region_name='us-east-1'))
+dynamodb = boto3.resource("dynamodb", config=Config(region_name=config.AWS_REGION))
 table_name = "UserSessionTable"
 table = dynamodb.Table(table_name)
 

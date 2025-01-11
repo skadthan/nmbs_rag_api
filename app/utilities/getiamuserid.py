@@ -1,9 +1,10 @@
 import boto3
 from botocore.config import Config
+from app import config
 
 # Initialize the IAM client
-iam_client = boto3.client('iam')
-client = boto3.client('sts',config=Config(region_name='us-east-1'))
+iam_client = boto3.client('iam', config=Config(region_name=config.AWS_REGION))
+client = boto3.client('sts',config=Config(region_name=config.AWS_REGION))
 
 
 def get_iam_user_id():

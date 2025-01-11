@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import boto3
 from botocore.config import Config
+from app import config
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ class ChatSessionHistory:
         :param table_name: The name of the DynamoDB table.
         """
         self.table_name = table_name
-        self.dynamodb = boto3.resource('dynamodb', config=Config(region_name='us-east-1'))  # Initialize the DynamoDB resource
+        self.dynamodb = boto3.resource('dynamodb', config=Config(region_name=config.AWS_REGION))  # Initialize the DynamoDB resource
         self.table = self.dynamodb.Table(self.table_name)  # Reference the DynamoDB table
 
     async def get_session_history(self, user_session_id: str):

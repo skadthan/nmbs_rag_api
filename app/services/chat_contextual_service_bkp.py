@@ -12,6 +12,7 @@ from langchain_community.chat_message_histories import DynamoDBChatMessageHistor
 from botocore.config import Config
 import json, re
 from langchain.schema import AIMessage, HumanMessage
+from app import config
 
 
 class CustomDynamoDBChatMessageHistory(DynamoDBChatMessageHistory):
@@ -32,7 +33,7 @@ config = Config(
         'max_attempts': 10,  # Number of retry attempts
         'mode': 'adaptive'   # Adaptive backoff strategy
     },
-    region_name='us-east-1'
+    region_name=config.AWS_REGION
 )
 
 # Initialize the Bedrock client
@@ -51,7 +52,8 @@ chatbedrock_llm = ChatBedrock(
 )
 
 # Initialize the RAG chain
-vector_store = vs.get_es_vector_store()
+#vector_store = vs.get_es_vector_store()
+vector_store = vs.get_aoss_vector_store()
 
 contextualized_question_system_template = (
     "You are assisting in generating a comprehensive capabilities statement based on user queries and contextual information."

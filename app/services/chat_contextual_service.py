@@ -15,7 +15,13 @@ import json, re
 from langchain.schema import AIMessage, HumanMessage
 import uuid
 from botocore.config import Config
+from app import config
+import logging
 
+# Set up logging
+#logging.basicConfig(level=config.LOG_LEVEL)
+#boto3.set_stream_logger('', config.LOG_LEVEL)
+#logger = logging.getLogger(__name__)
 
 class Message:
     def __init__(self, id, content, role, additional_kwargs=None, response_metadata=None):
@@ -31,7 +37,7 @@ class CustomDynamoDBChatMessageHistory:
     def __init__(self, table_name, session_id):
         self.table_name = table_name
         self.session_id = session_id
-        self.dynamodb = boto3.resource('dynamodb', config=Config(region_name='us-east-1'))
+        self.dynamodb = boto3.resource('dynamodb', config=Config(region_name=config.AWS_REGION))
         self.table = self.dynamodb.Table(self.table_name)
         self.messages = self.fetch_messages()
 
@@ -71,25 +77,21 @@ class CustomDynamoDBChatMessageHistory:
         )
 
 
-# Configure the Boto3 client with retries and backoff
-config = Config(
-    retries={
-        'max_attempts': 10,  # Number of retry attempts
-        'mode': 'adaptive'   # Adaptive backoff strategy
-    },
-    region_name='us-east-1'
-)
-
 # Initialize the Bedrock client
-boto3_bedrock = boto3.client(
-    "bedrock",
-    region_name="us-east-1",  # Replace with your Bedrock-supported region
-    config=Config(
-        retries={
-            'max_attempts': 10,
-            'mode': 'adaptive'
-        }
-    ))
+try:
+    boto3_bedrock = boto3.client(
+        "bedrock",
+        region_name=config.AWS_REGION,  # Replace with your Bedrock-supported region
+        endpoint_url=f"https://bedrock.{config.AWS_REGION}.amazonaws.com",
+        config=Config(
+            retries={
+                'max_attempts': 10,
+                'mode': 'adaptive'
+            }
+        ))
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize Bedrock client: {e}")
+
 print("Bedrock Client Initialized Successfully")
 
 #model_parameter = {"temperature": 0.0, "top_p": .5, "max_tokens_to_sample": 2000}
@@ -109,59 +111,16 @@ chatbedrock_llm = ChatBedrock(
     model_id=modelId,
     client=boto3_bedrock,
     model_kwargs=model_parameters, 
-    beta_use_converse_api=True
+    beta_use_converse_api=True,
+    region_name=config.AWS_REGION
 )
 
 # Initialize the RAG chain
-vector_store = vs.get_es_vector_store()
+#vector_store = vs.get_es_vector_store()
+vector_store = vs.get_aoss_vector_store()
 
-'''
-contextualized_question_system_template = (
-    "You are assisting in generating a comprehensive capabilities statement based on user queries and contextual information."
-    "Given the chat history and the latest user query, rewrite the query to be a self-contained question,"
-    "including any missing information required to answer it effectively. Ensure the question is framed professionally"
-    "and aligns with the goal of constructing a detailed capabilities statement."
-    "Do NOT answer the question—only reformulate it. If no reformulation is needed, return the query as is."
-)
-'''
-contextualized_question_system_template = app_config["SystemPrompt"]
+# Verify OpenSearch connection and credentials before retriever creation
 
-contextualized_question_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", contextualized_question_system_template),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-history_aware_retriever = create_history_aware_retriever(
-    chatbedrock_llm, vector_store.as_retriever(), contextualized_question_prompt
-)
-
-'''
-qa_system_prompt = """You are an AI assistant tasked with providing detailed and relevant responses for generating a capabilities statement. \
-Using the retrieved documents and context, answer the user query as accurately and professionally as possible. \
-If the retrieved context does not contain sufficient information to answer the query, state: \
-"I do not have enough context to provide an answer."\
-
-Guidelines:\
-1. Provide answers that are factual and directly relevant to constructing a capabilities statement.\
-2. Use concise, professional language tailored to the capabilities domain.\
-3. Reference retrieved context explicitly when possible, such as contracts, proposals, or assessments.\
-
-{context}"""
-'''
-qa_system_prompt = app_config["QAPrompt"]
-
-qa_prompt = ChatPromptTemplate.from_messages([
-    ("system", qa_system_prompt),
-    MessagesPlaceholder("chat_history"),
-    ("human", "{input}")
-])
-
-
-question_answer_chain = create_stuff_documents_chain(chatbedrock_llm, qa_prompt)
-
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
 #- Wrap the rag_chain with RunnableWithMessageHistory to automatically handle chat history:
 store = {}
@@ -175,17 +134,67 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
 
 
 
-chain_with_history = RunnableWithMessageHistory(
-    rag_chain,
-    lambda session_id: get_session_history(session_id=session_id),
-    #lambda session_id: DynamoDBChatMessageHistory(table_name='SessionTable', session_id=session_id),
-    #lambda session_id: CustomDynamoDBChatMessageHistory(table_name="SessionTable", session_id=session_id),
-    input_messages_key="input",
-    history_messages_key="chat_history",
-    output_messages_key="answer"
-)
+
 
 def contexctual_chat_invoke(request):
+
+    try:
+        #logger.info("Checking AWS credentials...")
+        credentials = boto3.Session().get_credentials()
+        frozen_credentials = credentials = credentials.get_frozen_credentials()
+        #print(f"Credentials expiry time: {credentials.expiration}")
+        #logger.info(f"Credentials aws_access_key_id: {credentials.access_key}")
+        #logger.info(f"Credentials aws_secret_access_key: {credentials.secret_key}")
+        #logger.info(f"Credentials aws_session_token: {credentials.token}")
+
+        #logger.info("printing frozen credentials")
+
+        #logger.info(f"Frozen Credentials aws_access_key_id: {frozen_credentials.access_key}")
+        #logger.info(f"Frozen Credentials aws_secret_access_key: {frozen_credentials.secret_key}")
+        #logger.info(f"Frozen Credentials aws_session_token: {frozen_credentials.token}")
+        
+        #logger.info("Verifying OpenSearch connection...")
+        response = vector_store.client.count()
+        #logger.info(f"Successfully listed collections: {json.dumps(response, default=str)}")
+        #logger.info("OpenSearch connection verified")
+        
+        # Wrap your retriever creation with debugging
+        base_retriever = vector_store.as_retriever()
+        #base_retriever = retriever_debug_wrapper(base_retriever)
+        
+        contextualized_question_system_template = app_config["SystemPrompt"]
+
+        contextualized_question_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", contextualized_question_system_template),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+        history_aware_retriever = create_history_aware_retriever(
+            chatbedrock_llm, base_retriever, contextualized_question_prompt
+        )
+
+        qa_system_prompt = app_config["QAPrompt"]
+
+        qa_prompt = ChatPromptTemplate.from_messages([
+            ("system", qa_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}")
+        ])
+
+
+        question_answer_chain = create_stuff_documents_chain(chatbedrock_llm, qa_prompt)
+
+        rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+    
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        if hasattr(e, '__cause__') and e.__cause__:
+            print(f"Underlying error: {str(e.__cause__)}")
+        raise
+    
+    
 
     dynamo_history = CustomDynamoDBChatMessageHistory(table_name="UserChatSessionHistoryTable", session_id=request.session_id)
 
@@ -226,9 +235,21 @@ def contexctual_chat_invoke(request):
         "chat_history": formatted_history
     }
     #print("chain_input: ",chain_input)
+    '''
+    chain_with_history = RunnableWithMessageHistory(
+    rag_chain,
+    lambda session_id: get_session_history(session_id=session_id),
+    #lambda session_id: DynamoDBChatMessageHistory(table_name='SessionTable', session_id=session_id),
+    #lambda session_id: CustomDynamoDBChatMessageHistory(table_name="SessionTable", session_id=session_id),
+    input_messages_key="input",
+    history_messages_key="chat_history",
+    output_messages_key="answer"
+    )
+    '''
     # Invoke the RAG chain with the constructed input
+    #print("Before AI result")
     result = rag_chain.invoke(chain_input)
-    #print("AI result", result)
+    #print("After AI result", result)
     
     # Token counting for output
     output_token_count = count_anthropic_tokens(result["answer"])
@@ -346,3 +367,22 @@ def format_chat_history_for_chain(messages):
 
 def generate_message_id():
     return str(uuid.uuid4())
+
+
+# Wrap the retriever with debugging
+def retriever_debug_wrapper(retriever):
+    original_get_relevant_docs = retriever._get_relevant_documents
+    
+    def wrapped_get_relevant_docs(*args, **kwargs):
+        print("Making OpenSearch request")
+        try:
+            return original_get_relevant_docs(*args, **kwargs)
+        except Exception as e:
+            print(f"OpenSearch request failed: {str(e)}")
+            if hasattr(e, 'response'):
+                print(f"Response status: {e.response.status_code}")
+                print(f"Response body: {e.response.text}")
+            raise
+    
+    retriever._get_relevant_documents = wrapped_get_relevant_docs
+    return retriever

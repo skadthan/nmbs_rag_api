@@ -1,8 +1,9 @@
 import boto3
 from datetime import datetime
 from botocore.config import Config
+from app import config
 
-dynamodb = boto3.resource("dynamodb",config=Config(region_name='us-east-1'))
+dynamodb = boto3.resource("dynamodb",config=Config(region_name=config.AWS_REGION))
 table_name = "UserSessionTable"
 table = dynamodb.Table(table_name)
 

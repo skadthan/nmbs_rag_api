@@ -20,6 +20,7 @@ from app import config
 from langchain_elasticsearch import ElasticsearchStore
 from pathlib import Path
 import boto3
+from botocore.config import Config
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
 from langchain_community.vectorstores import OpenSearchVectorSearch
 
@@ -149,7 +150,7 @@ def store_opensearch_embeddings(docs,embedding_model,aoss_vector_store,aoss_es_v
     vector_store_name = aoss_es_vector_store_name #config.AOSS_VECTORSTORE_NAME
     index_name = config.AOSS_VECTORSTORE_INDEX
    
-    aoss_client = boto3.client('opensearchserverless')
+    aoss_client = boto3.client('opensearchserverless',config=Config(region_name=config.AWS_REGION))
     collection = aoss_client.batch_get_collection(names=[vector_store_name])
     #print("Printing collection name", collection)
     host = collection['collectionDetails'][0]['id'] + '.' + config.AWS_REGION + '.aoss.amazonaws.com:443'

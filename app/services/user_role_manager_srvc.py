@@ -11,6 +11,7 @@ from app.models.user_role_models import UserRegistration, RoleApproval, User
 #dynamodb = boto3.resource('dynamodb')
 import logging
 from botocore.config import Config
+from app import config
 
 # Enable debug logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -20,7 +21,7 @@ from botocore.config import Config
 # Initialize DynamoDB client
 #dynamodb = boto3.resource('dynamodb')
 # Explicitly set region (if needed)
-dynamodb = boto3.resource('dynamodb', config=Config(region_name='us-east-1'))
+dynamodb = boto3.resource('dynamodb', config=Config(region_name=config.AWS_REGION))
 
 users_table = dynamodb.Table('Users')
 roles_table = dynamodb.Table('Roles')

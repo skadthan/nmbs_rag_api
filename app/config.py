@@ -4,15 +4,16 @@ from dotenv import load_dotenv
 load_dotenv()  # This will load environment variables from a `.env` file
 
 # AWS Configuration
+AWS_PROFILE = profile_name = os.getenv("AWS_PROFILE", "ai-project") 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 BEDROCK_ENDPOINT = os.getenv("BEDROCK_ENDPOINT", "https://bedrock-runtime.us-east-1.amazonaws.com")
-
+BEDROCK_ASSUME_ROLE_ARN ="arn:aws:iam::account-id:role/nmbs-ecs-role"
 # Elasticsearch Local Configuration
 #ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "https://localhost:9200")
 # Elasticsearch Docker Configuration
 ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "https://host.docker.internal:9200")
 ELASTICSEARCH_USERNAME = os.getenv("ELASTICSEARCH_USERNAME", "elastic")
-ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "Ashu#123")
+ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "password")
 SSL_ASSERT_FINGERPRINT = os.getenv("SSL_ASSERT_FINGERPRINT","48:DA:5E:B4:A2:E7:59:29:DF:FC:5A:9A:B6:72:50:E4:D1:58:1F:0B:6E:2B:EE:1B:CE:23:A2:79:B9:46:DD:5D")
 
 
@@ -42,7 +43,7 @@ CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 512))  # Default chunk size for text sp
 OVERLAP = int(os.getenv("OVERLAP", 50))  # Default overlap size for text chunks
 
 # Logging Configuration
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "app.log")
 
 USER_CREDENTIALS = {

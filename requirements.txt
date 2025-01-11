@@ -34,3 +34,4 @@ dependency-check
 pipdeptree
 pydantic[email]
 opensearch-py
+awscli

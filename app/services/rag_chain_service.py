@@ -8,12 +8,13 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_aws import ChatBedrock
 from app.services.chat_session_history_service import ChatSessionHistory
 from botocore.config import Config
+from app import config
 
 # Set up the LLM
 def get_llm():
     model_parameter = {"temperature": 0.0, "top_p": 0.5, "max_tokens_to_sample": 2000}
     model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
-    boto3_bedrock = boto3.client("bedrock",config=Config(region_name='us-east-1'))
+    boto3_bedrock = boto3.client("bedrock",config=Config(region_name=config.AWS_REGION))
     return ChatBedrock(
         model_id=model_id,
         client=boto3_bedrock,

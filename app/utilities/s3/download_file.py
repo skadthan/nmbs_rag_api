@@ -1,6 +1,7 @@
 import boto3
 import os
 from botocore.config import Config
+from app import config
 
 # Specify the AWS profile name
 #os.environ["AWS_DEFAULT_REGION"] = boto3.Session().region_name 
@@ -8,8 +9,8 @@ from botocore.config import Config
 
 # Initialize awsauth, open search parameters, boto clients and llm model 
 #s3 = session.client('s3')
-#s3 = boto3.resource('s3', config=Config(region_name='us-east-1'))
-s3 =boto3.client('s3',config=Config(region_name='us-east-1')) 
+#s3 = boto3.resource('s3', config=Config(region_name=config.AWS_REGION))
+s3 =boto3.client('s3',config=Config(region_name=config.AWS_REGION)) 
 
 def download_file(bucket_name,  file_name):
     #print('Debug:4, bucket_name & : file_name ', file_name)
