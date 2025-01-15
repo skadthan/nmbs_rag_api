@@ -161,6 +161,7 @@ def store_opensearch_embeddings(docs,embedding_model,aoss_vector_store,aoss_es_v
     auth = AWSV4SignerAuth(credentials, config.AWS_REGION, service)
 
     # Update or create the ElasticSearch vectorstore
+    bulk_size = max(len(docs), 1000)
     if aoss_vector_store is None:
         aoss_vector_store = OpenSearchVectorSearch.from_documents(
         docs,
@@ -173,6 +174,7 @@ def store_opensearch_embeddings(docs,embedding_model,aoss_vector_store,aoss_es_v
         connection_class = RequestsHttpConnection,
         index_name=index_name,
         engine="faiss",
+        bulk_size = bulk_size
     )
     else:
         #print("In Else: Adding more documents...")

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import chat, embeddings, chat_session_history,iam_info,chat_runnable_with_history, auth, batch_embeddings,create_user_chat_session,get_user_chat_sessions, user_role_manager,get_ai_application_config
+from app.routers import chat, embeddings, chat_session_history,iam_info,chat_runnable_with_history, auth, batch_embeddings,create_user_chat_session,get_user_chat_sessions, user_role_manager,get_ai_application_config, health_check
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(root_path="/nmbs/api")
@@ -11,6 +11,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+
+app.include_router(health_check.router, prefix="", tags=["Health Check"])
+app.include_router(user_role_manager.router, prefix="/user", tags=["User Management"])
 app.include_router(user_role_manager.router, prefix="/user", tags=["User Management"])
 app.include_router(auth.router,prefix="/auth", tags=["User Management"])
 app.include_router(chat.router, prefix="/chat", tags=["Contextual Chat Bot"])
