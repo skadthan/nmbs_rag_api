@@ -87,7 +87,7 @@ def process_s3_bucket(bucket_name: str, vector_index: str):
     aoss_vector_store=None
     folder_path = config.S3_LOCAL_DATA_FOLDER
     s3_prefix=""
-    #sync_s3_bucket_to_local(bucket_name,folder_path,s3_prefix)
+    sync_s3_bucket_to_local(bucket_name,folder_path,s3_prefix)
 
     if not vector_index:
         #aoss_es_vector_store_name=config.DEFAULT_INDEX_NAME #Local Elastic Search Default Index Name

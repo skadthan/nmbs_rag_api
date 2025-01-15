@@ -139,9 +139,9 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
 def contexctual_chat_invoke(request):
 
     try:
-        #logger.info("Checking AWS credentials...")
+        #logger.info("Checking AWS credentials...in contexctual_chat_invoke")
         credentials = boto3.Session().get_credentials()
-        frozen_credentials = credentials = credentials.get_frozen_credentials()
+        frozen_credentials  = credentials.get_frozen_credentials()
         #print(f"Credentials expiry time: {credentials.expiration}")
         #logger.info(f"Credentials aws_access_key_id: {credentials.access_key}")
         #logger.info(f"Credentials aws_secret_access_key: {credentials.secret_key}")
