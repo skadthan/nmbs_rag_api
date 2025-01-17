@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request, Response
 from datetime import datetime, timedelta
 import jwt
 from typing import Optional
@@ -58,7 +58,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -88,7 +88,7 @@ def get_current_user(token: str = Depends(bearer_scheme)) -> Optional[str]:
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(credentials: LoginRequest):
+def login(credentials: LoginRequest, response: Response):
     """
     Login endpoint for user authentication.
     Accepts JSON payloads with `username` and `password`.
@@ -103,10 +103,56 @@ def login(credentials: LoginRequest):
     access_token = create_access_token(data={"sub": username}, expires_delta=timedelta(minutes=30))
     refresh_token = create_refresh_token(data={"sub": username})
 
+    # Set refresh token in HttpOnly cookie
+    response.set_cookie(
+        key="refreshToken",
+        value=refresh_token,
+        httponly=True,
+        secure=True,  # Ensure cookies are sent only over HTTPS
+        samesite="Strict",  # Prevent CSRF
+        max_age=7 * 24 * 60 * 60,  # 7 days in seconds
+    )
+
     # Example usage
     exp_timestamp = decode_access_token(access_token)
     print(f"Access Token expires at: {exp_timestamp}")
     exp_timestamp = decode_access_token(refresh_token)
     print(f"Refresh Token expires at: {exp_timestamp}")
 
-    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+    # Debugging expiration times
+    #print(f"Access Token expires at: {decode_access_token(access_token)}")
+    #print(f"Refresh Token expires at: {decode_access_token(refresh_token)}")
+
+     # Return access token only
+    return {"access_token": access_token, "token_type": "bearer"}
+    #return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+@router.post("/logout")
+def logout(response: Response):
+    """
+    Logout endpoint to clear the refresh token cookie.
+    """
+    response.delete_cookie("refreshToken")  # Delete the refreshToken cookie
+    return {"message": "Logged out successfully"}
+
+
+@router.post("/refresh")
+def refresh_token(request: Request):
+    refresh_token = request.cookies.get('refreshToken')
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token found")
+
+    # Decode and validate the refresh token
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        # Create a new access token
+        new_access_token = create_access_token(data={"sub": username})
+        return {"access_token": new_access_token, "token_type": "bearer"}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
