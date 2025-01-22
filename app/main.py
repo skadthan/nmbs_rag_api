@@ -1,11 +1,20 @@
 from fastapi import FastAPI
 from app.routers import chat, embeddings, chat_session_history,iam_info,chat_runnable_with_history, auth, batch_embeddings,create_user_chat_session,get_user_chat_sessions, user_role_manager,get_ai_application_config, health_check
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic_settings import BaseSettings
+from typing import List
+from app import config
+
+class Settings(BaseSettings):
+    CORS_ORIGINS: List[str] = [config.CORS_ORGIN_URL]
+
+settings = Settings()
 
 app = FastAPI(root_path="/nmbs/api")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (replace with specific domains for security)
+    allow_origins=settings.CORS_ORIGINS, #["*"],  # Allow all origins (replace with specific domains for security), Don't use allow_origins=["*"] when allow_credentials=True
+    #allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers

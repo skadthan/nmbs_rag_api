@@ -32,15 +32,12 @@ ENTRYPOINT ["sh", "-c", "date && exec \"$@\"", "--"]
 
 
 #Docker - ECR login and create repository
-#aws ecr get-login-password --region us-east-1 --debug | docker login --username AWS --password-stdin aws-account-id.dkr.ecr.us-east-1.amazonaws.com
+#aws ecr get-login-password --region us-east-1 --debug | docker login --username AWS --password-stdin 352071936583.dkr.ecr.us-east-1.amazonaws.com
 #aws ecr create-repository --repository-name nmbs-rag-api --region us-east-1
 
 #sudo docker build -t nmbs-rag-api .
-#docker tag nmbs-rag-api aws-account-id.dkr.ecr.us-east-1.amazonaws.com/nmbs-rag-api:v0.1
-#docker push aws-account-id.dkr.ecr.us-east-1.amazonaws.com/nmbs-rag-api:v0.1
+#docker tag nmbs-rag-api 352071936583.dkr.ecr.us-east-1.amazonaws.com/nmbs-rag-api:v0.1
+#docker push 352071936583.dkr.ecr.us-east-1.amazonaws.com/nmbs-rag-api:v0.1
 #Test the docker API container locally
-#aws sts assume-role --role-arn arn:aws:iam::aws-account-id:role/nmbs-ecs-role --role-session-name LocalTestingSession
-#docker run -e AWS_REGION=us-east-1 -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -p 8000:8000 --name nmbs-api -d nmbs-rag-api:latest 
-
-
-
+#aws sts assume-role --role-arn arn:aws:iam::352071936583:role/nmbs-ecs-role --role-session-name LocalTestingSession
+#docker run -e AWS_REGION=us-east-1 -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -p 8000:8000 --name nmbs-api -d nmbs-rag-api:latest

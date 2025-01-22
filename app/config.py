@@ -50,3 +50,6 @@ USER_CREDENTIALS = {
     "admin": os.getenv("ADMIN_PASSWORD", "Ananya#2021"),
     "skadthan": os.getenv("USER_PASSWORD", "Ashu#123"),
 }
+
+#CORS Configuration
+CORS_ORGIN_URL ="https://apps.adeptaugmentit.com"
