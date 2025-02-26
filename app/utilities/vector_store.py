@@ -9,6 +9,7 @@ from langchain_community.vectorstores import OpenSearchVectorSearch
 from app import config
 from botocore.config import Config
 import logging, json
+import datetime
 
 def get_es_vector_store():
     vector_store_name = DEFAULT_INDEX_NAME #'ashu-elastic-search-vector-db'
@@ -21,28 +22,30 @@ def get_es_vector_store():
 
 def get_aoss_vector_store():
     # Set up logging
-    #logging.basicConfig(level=config.LOG_LEVEL)
-    #logger = logging.getLogger(__name__)
+    logging.basicConfig(level=config.LOG_LEVEL)
+    logger = logging.getLogger(__name__)
 
     try:
         # Get AWS credentials explicitly
-        session = boto3.Session()
-        credentials = session.get_credentials()
+        #session = boto3.Session()
+        #credentials = session.get_credentials()
+        # In get_aoss_vector_store():
+        credentials = get_refreshable_credentials()
         frozen_credentials = credentials.get_frozen_credentials()
         
-        #logger.debug(f"Using AWS Region: {config.AWS_REGION}")
-        #logger.debug(f"Vector Store Name: {conf.AOSS_VECTORSTORE_NAME}")
-        #logger.debug(f"Index Name: {conf.AOSS_VECTORSTORE_INDEX}")
+        logger.debug(f"Using AWS Region: {config.AWS_REGION}")
+        logger.debug(f"Vector Store Name: {conf.AOSS_VECTORSTORE_NAME}")
+        logger.debug(f"Index Name: {conf.AOSS_VECTORSTORE_INDEX}")
 
-        #logger.debug(f"AWS Access Key: {credentials.access_key}")
-        #logger.debug(f"AWS Secret Key: {credentials.secret_key}")
-        #logger.debug(f"AWS Session Token: {credentials.token}")
+        logger.debug(f"AWS Access Key: {credentials.access_key}")
+        logger.debug(f"AWS Secret Key: {credentials.secret_key}")
+        logger.debug(f"AWS Session Token: {credentials.token}")
 
-        #print("printing frozen credentials")
+        print("printing frozen credentials")
 
-        #logger.debug(f"Frozen AWS Access Key: {frozen_credentials.access_key}")
-        #logger.debug(f"Frozen AWS Secret Key: {frozen_credentials.secret_key}")
-        #logger.debug(f"Frozen AWS Session Token: {frozen_credentials.token}")
+        logger.debug(f"Frozen AWS Access Key: {frozen_credentials.access_key}")
+        logger.debug(f"Frozen AWS Secret Key: {frozen_credentials.secret_key}")
+        logger.debug(f"Frozen AWS Session Token: {frozen_credentials.token}")
 
         # Verify credentials are available
         if not all([credentials.access_key, credentials.secret_key]):
@@ -109,7 +112,7 @@ def get_aoss_vector_store():
             #aoss_vector_store.client.info()
             response = aoss_vector_store.client.count()
             #logger.info(f"Successfully listed collections: {json.dumps(response, default=str)}")
-            #logger.debug("Successfully connected to OpenSearch")
+            logger.info("Successfully connected to OpenSearch")
         except Exception as e:
             #logger.error(f"Failed to connect to OpenSearch: {str(e)}")
             raise {str(e)}
@@ -118,4 +121,20 @@ def get_aoss_vector_store():
 
     except Exception as e:
         #logger.error(f"Error in get_aoss_vector_store: {str(e)}")
-        raise {str(e)}
+        #raise {str(e)}
+        raise Exception(f"OpenSearch connection failed: {str(e)}")
+    
+def get_refreshable_credentials():
+    session = boto3.Session()
+    credentials = session.get_credentials()
+    
+    # Check if credentials will expire soon (within 5 minutes)
+    if hasattr(credentials, 'expiration') and credentials.expiration:
+        time_until_expiry = (credentials.expiration - datetime.datetime.now(datetime.timezone.utc)).total_seconds()
+        if time_until_expiry < 300:  # 5 minutes
+            # Force refresh by creating a new session
+            session = boto3.Session()
+            credentials = session.get_credentials()
+            print("Vector_Store: Boto Session Credentials Successfully refreshed")
+    
+    return credentials

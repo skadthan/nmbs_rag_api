@@ -17,6 +17,7 @@ import uuid
 from botocore.config import Config
 from app import config
 import logging
+import datetime
 
 # Set up logging
 #logging.basicConfig(level=config.LOG_LEVEL)
@@ -140,6 +141,7 @@ def contexctual_chat_invoke(request):
 
     try:
         #logger.info("Checking AWS credentials...in contexctual_chat_invoke")
+        print("Checking AWS credentials...in contexctual_chat_invoke")
         credentials = boto3.Session().get_credentials()
         frozen_credentials  = credentials.get_frozen_credentials()
         #print(f"Credentials expiry time: {credentials.expiration}")
@@ -157,10 +159,11 @@ def contexctual_chat_invoke(request):
         response = vector_store.client.count()
         #logger.info(f"Successfully listed collections: {json.dumps(response, default=str)}")
         #logger.info("OpenSearch connection verified")
+        print("OpenSearch connection verified")
         
         # Wrap your retriever creation with debugging
         base_retriever = vector_store.as_retriever()
-        #base_retriever = retriever_debug_wrapper(base_retriever)
+        base_retriever = retriever_debug_wrapper(base_retriever)
         
         contextualized_question_system_template = app_config["SystemPrompt"]
 

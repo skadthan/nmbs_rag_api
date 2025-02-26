@@ -10,6 +10,7 @@ from app.models.rag_models import RAGRequest, RAGResponse
 from fastapi import APIRouter, HTTPException, Depends
 from app.routers.auth import get_current_user
 from fastapi.responses import JSONResponse
+import boto3
 
 router = APIRouter()
 
@@ -71,3 +72,21 @@ async def contexctual_chatbot(request: RAGRequest,current_user: str = Depends(ge
         
         # Return a JSON response with the custom error message
         return JSONResponse(status_code=200, content={"message": error_message})
+
+
+@router.get('/debug/credentials')
+def debug_credentials(str = Depends(get_current_user)):
+    session = boto3.Session()
+    credentials = session.get_credentials()
+    
+    if credentials is None:
+        return {"status": "error", "message": "No credentials found"}
+    
+    frozen_creds = credentials.get_frozen_credentials()
+    return {
+        "status": "success",
+        "access_key_id": frozen_creds.access_key[:4] + "...",
+        "has_secret_key": bool(frozen_creds.secret_key),
+        "has_token": bool(frozen_creds.token),
+        "expiration": str(credentials.expiration) if hasattr(credentials, "expiration") else "None"
+    }

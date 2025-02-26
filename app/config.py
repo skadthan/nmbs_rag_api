@@ -43,7 +43,7 @@ CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 512))  # Default chunk size for text sp
 OVERLAP = int(os.getenv("OVERLAP", 50))  # Default overlap size for text chunks
 
 # Logging Configuration
-LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "app.log")
 
 USER_CREDENTIALS = {
