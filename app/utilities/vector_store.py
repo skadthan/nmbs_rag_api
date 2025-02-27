@@ -115,7 +115,8 @@ def get_aoss_vector_store():
             logger.info("Successfully connected to OpenSearch")
         except Exception as e:
             #logger.error(f"Failed to connect to OpenSearch: {str(e)}")
-            raise {str(e)}
+            #raise {str(e)}
+            raise Exception(f"OpenSearch aoss_vector_store.client.count() failed: {str(e)}")
 
         return aoss_vector_store
 

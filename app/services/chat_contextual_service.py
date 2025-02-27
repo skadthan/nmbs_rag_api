@@ -18,6 +18,14 @@ from botocore.config import Config
 from app import config
 import logging
 import datetime
+import time
+from threading import Lock
+
+vector_store = None
+last_init_time = 0
+REFRESH_INTERVAL = 45 * 60  # 45 minutes
+vector_store_lock = Lock()  # To prevent race conditions in concurrent environments
+
 
 # Set up logging
 #logging.basicConfig(level=config.LOG_LEVEL)
@@ -118,7 +126,7 @@ chatbedrock_llm = ChatBedrock(
 
 # Initialize the RAG chain
 #vector_store = vs.get_es_vector_store()
-vector_store = vs.get_aoss_vector_store()
+#vector_store = vs.get_aoss_vector_store()
 
 # Verify OpenSearch connection and credentials before retriever creation
 
@@ -142,8 +150,8 @@ def contexctual_chat_invoke(request):
     try:
         #logger.info("Checking AWS credentials...in contexctual_chat_invoke")
         print("Checking AWS credentials...in contexctual_chat_invoke")
-        credentials = boto3.Session().get_credentials()
-        frozen_credentials  = credentials.get_frozen_credentials()
+        #credentials = boto3.Session().get_credentials()
+        #frozen_credentials  = credentials.get_frozen_credentials()
         #print(f"Credentials expiry time: {credentials.expiration}")
         #logger.info(f"Credentials aws_access_key_id: {credentials.access_key}")
         #logger.info(f"Credentials aws_secret_access_key: {credentials.secret_key}")
@@ -156,10 +164,17 @@ def contexctual_chat_invoke(request):
         #logger.info(f"Frozen Credentials aws_session_token: {frozen_credentials.token}")
         
         #logger.info("Verifying OpenSearch connection...")
+        vector_store = get_current_vector_store()
         response = vector_store.client.count()
+        # Safely execute the count operation
+        def count_operation():
+            return vector_store.client.count()
+            
+        response = safe_aoss_operation(count_operation)
+        print("Successfully connected to OpenSearch")
+
         #logger.info(f"Successfully listed collections: {json.dumps(response, default=str)}")
         #logger.info("OpenSearch connection verified")
-        print("OpenSearch connection verified")
         
         # Wrap your retriever creation with debugging
         base_retriever = vector_store.as_retriever()
@@ -389,3 +404,38 @@ def retriever_debug_wrapper(retriever):
     
     retriever._get_relevant_documents = wrapped_get_relevant_docs
     return retriever
+
+
+def get_current_vector_store():
+    global vector_store, last_init_time
+    current_time = time.time()
+    
+    # Use a lock to prevent multiple threads from initializing simultaneously
+    with vector_store_lock:
+        # Initialize if never initialized or if refresh interval has passed
+        if vector_store is None or (current_time - last_init_time) > REFRESH_INTERVAL:
+            print(f"Initializing fresh AOSS vector store (last init: {int(current_time - last_init_time)} seconds ago)")
+            vector_store = vs.get_aoss_vector_store()
+            last_init_time = current_time
+    
+    return vector_store
+
+def safe_aoss_operation(operation_func):
+    """
+    Safely execute an AOSS operation, refreshing credentials if a 403 error occurs
+    """
+    try:
+        return operation_func()
+    except Exception as e:
+        error_str = str(e).lower()
+        if '403' in error_str or 'forbidden' in error_str:
+            print("AOSS 403 error detected, forcing credential refresh")
+            # Force immediate refresh on 403
+            global vector_store, last_init_time
+            with vector_store_lock:
+                vector_store = vs.get_aoss_vector_store()
+                last_init_time = time.time()
+            # Try the operation again with fresh vector store
+            return operation_func()
+        # If not a 403 error or second attempt fails, re-raise
+        raise
